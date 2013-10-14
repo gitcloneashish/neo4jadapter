@@ -7,7 +7,7 @@ neo4j.query("create (n:Node{node})")
         .args({
           id: 1,
           name: 'John'
-        }).adapter()
+        }).adapter() 
         .load('http://localhost:7474/db/cypher')
         .done(function(data) {
           // do something
