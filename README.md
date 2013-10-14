@@ -25,3 +25,7 @@ neo4j.query("match (n:Node) where n.id = '%s' return n.name")
         .done(function(data) {
           alert(data.data[0][0]);
         });
+
+note
+====
+requires jquery
