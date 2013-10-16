@@ -1,3 +1,6 @@
+﻿var http = require('http');
+var url = require("url");
+
 String.prototype.format = function () {
     var args = [];
     if (arguments.length == 1) args = arguments[0];
@@ -5,10 +8,10 @@ String.prototype.format = function () {
         for (var i = 0; i < arguments.length; i++)
             args.push(arguments[i]);
     }
-    if (!(args instanceof Array)) args = [ args ];
-    var bits = this.split( /%s/g );
+    if (!(args instanceof Array)) args = [args];
+    var bits = this.split(/%s/g);
     var ret = [];
-    for (var i=0; i<bits.length - 1; i++) {
+    for (var i = 0; i < bits.length - 1; i++) {
         ret.push(bits[i]);
         if (i < args.length) ret.push(args[i]);
     }
@@ -16,8 +19,8 @@ String.prototype.format = function () {
     return ret.join('');
 };
 
-﻿/*
-    neo4j data loader
+/*
+   neo4j data loader
 */
 var neo4j = {
     name: "neo4j",
@@ -61,8 +64,7 @@ var neo4j = {
         });
     };
 
-    this.query = function (query)
-    {
+    this.query = function (query) {
         return new neo4j.Query(query);
     };
 }).call(neo4j);
@@ -72,31 +74,37 @@ var neo4j = {
     this.Adapter = function (params) {
         this.target = params.target;
         this.url = params.url;
-        this.args = params.args!=undefined?params.args:{};
-
-        this.__req__ = new $.ajax({
-            url: "",
-            type: "POST",
-            data: JSON.stringify({
-                "query": params.target,
-                "params": params.args
-            }),
-            header: [
-                { key: "Content-Type", value: "application/json; charset=utf-8" }
-            ]
+        this.args = params.args != undefined ? params.args : {};
+        this.data = JSON.stringify({
+            "query": params.target,
+            "params": params.args
         });
+
+        this.options = {
+            host: "",
+            path: "",
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json; charset=utf-8"
+            }
+        };
     };
-    this.Adapter.prototype.load = function (url) {
-        this.__req__.url = url;
-        this.__req__.load();
+    this.Adapter.prototype.load = function (u) {
+        this.options.host = url.parse(u).host;
+        this.options.path = url.parse(u).path;
+        this.__req__ = http.request(this.options, function (res) {
+            res.setEncoding('utf8');
+        });
+        this.__req__.write(this.data);
+        this.__req__.end();
         return this;
     };
     this.Adapter.prototype.done = function (callback) {
-        this.__req__.done(callback);
+        this.__req__.on("data", callback);
         return this;
     };
     this.Adapter.prototype.fail = function (callback) {
-        this.__req__.fail(callback);
+        this.__req__.on("error", callback);
         return this;
     };
     this.Adapter.prototype.always = function (callback) {
@@ -104,3 +112,5 @@ var neo4j = {
         return this;
     };
 }).call(neo4j.dataLoader);
+
+exports.neo4j = neo4j;
