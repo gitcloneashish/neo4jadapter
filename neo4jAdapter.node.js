@@ -1,6 +1,46 @@
-﻿var http = require('http');
+/*
+    neo4j examples
+--------------------------------------------
+    var gurl = "http://localhost:7474";
+
+    -- create node --
+    =================
+    neo4j.node({ name: 'John' }).adapter.load(gurl).done(function(data){
+        // created 
+    });
+    creates node as: { name: 'John' }
+
+    -- create relationship --
+    =========================
+    neo4j.rel(0, "LOVES", { to: 1 }).adapter.load(gurl).done(function(data){
+        // created 
+    });
+    creates relationship as: (0)-[:LOVES]->(1)
+
+    -- create node with label --
+    ============================
+    neo4j.node({ name: 'John' }).label("Person").adapter.load(gurl).done(function(data){
+        // created 
+    });
+    creates node as: { name: 'John' } with label 'Person'
+
+    -- create all above in batch --
+    ===============================
+    neo4j.batch()
+        .add("node", { name: 'John' })
+        .add("label", "Person", "{0}") // apply label to '0' elem in batch
+        .add("node", { name: 'Maria' })
+        .add("label", "Person", "{2}") // apply label to '2' elem in batch
+        .add("rel", "LOVES", "{0}", { to: "{2}" })  // apply label to '0' elem in batch
+        .adapter.load(gurl).done(function(data){
+            // created 
+        });
+
+    creates: (:Person{ name : 'John' })->[:LOVES]-(:Person{ name : 'Maria' })
+*/
+
+var http = require('http');
 var url = require("url");
-//var nodeNeo4j = require('neo4j');
 
 String.prototype.format = function () {
     var args = [];
@@ -196,7 +236,6 @@ var neo4j = {
 (function () {
 
     this.Rel = function (path, rel, type, dir, from, to, del) { // rel could be: { foo: bar }, 0, undefined; type could be LOVES, undefined; dir could be all, in, out
-        console.log('Rel class, %s, %s, %s, %s, %s, %s', path, rel, type, dir, from, to);
         this.obj = rel;
         this.del = del;
         this.dir = dir;
@@ -216,7 +255,6 @@ var neo4j = {
             this.obj = undefined; // its consumed
         }
         else if (to) { // rel is to be created
-            console.log("rel is to be created, %s, %s", this.type);
             var data = this.obj;
             this.obj = {
                 type: this.type,
@@ -264,10 +302,24 @@ var neo4j = {
     this.Batch = function (nObjs) {
         this.b = [];
         for (var i = 0; i < nObjs.length; i++) {
-            this.add(nObjs[i]);
+            this.addObj(nObjs[i]);
         }
     };
-    this.Batch.prototype.add = function (nObj) {
+    this.Batch.prototype.add = function () {
+        var func = undefined;
+        var args = [];
+        for (var i = 0; i < arguments.length; i++)
+        {
+            if (i == 0) {
+                func = neo4j[arguments[i]];
+                continue;
+            }
+            args.push(arguments[i]);
+        }
+        this.addObj(func.apply(neo4j, args));
+        return this;
+    };
+    this.Batch.prototype.addObj = function (nObj) {
         var b = nObj.b();
         b.id = this.b.length;
         this.b.push(b);
@@ -275,6 +327,7 @@ var neo4j = {
     };
     this.Batch.prototype.adapter = function () {
         var data = JSON.stringify(this.b);
+        //console.log('executing batch: \n%j', this.b);
         return new neo4j.loader.Adapter("/batch", "POST", data);
     };
     this.batch = function () {
@@ -302,16 +355,18 @@ var neo4j = {
         this.options.host = url.parse(u).host.split(':')[0];
         this.options.port = url.parse(u).host.split(':')[1];
 
-        console.log('------------------------------------------');
+        /*console.log('------------------------------------------');
         console.log('neo4j, http://%s \n%j', this.options.host + ":" + this.options.port, { path: this.options.path, method: this.options.method, data: this.data });
-        console.log('------------------------------------------');
+        console.log('------------------------------------------');*/
 
         var a = this;
         this.__req__ = http.request(this.options, function (res) {
             res.setEncoding('utf8');
             res.on('data', function (chunk) {
                 this._done = 1;
-                eval("chunk = " + chunk)
+                try {
+                    eval("chunk = " + chunk)
+                } catch (e) { }
                 for (var i = 0; i < a.cb.length; i++) a.cb[i](chunk);
                 a.cb = []; a.fb = [];
             });
