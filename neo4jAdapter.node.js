@@ -42,6 +42,17 @@
 var http = require('http');
 var url = require("url");
 
+function s4() {
+    return Math.floor((1 + Math.random()) * 0x10000)
+               .toString(16)
+               .substring(1);
+};
+
+function guid() {
+    return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+           s4() + '-' + s4() + s4() + s4();
+}
+
 String.prototype.format = function () {
     var args = [];
     if (arguments.length == 1) args = arguments[0];
@@ -72,7 +83,7 @@ var neo4j = {
 (function () {
 
     this.NObj = function () {
-        
+
     };
     this.NObj.prototype.get = function (u) {
         return this.adapter().load(u);
@@ -175,6 +186,10 @@ var neo4j = {
         params = neo4j.Rel.params(rel, type, params);
         return new neo4j.Rel(this.path(), params.rel, params.type, params.dir, undefined, params.to, params.del);
     };
+    this.Node.prototype.props = function (name, params) {
+        params = neo4j.Property.params(undefined, undefined, name, params);
+        return new neo4j.Property(this.path(), undefined, undefined, params.name, params.ps, params.del);
+    };
     this.Node.prototype.label = function (obj, node, params) {
         params = neo4j.Label.params(obj, node, params);
         return new neo4j.Label(this.path(), params.label, undefined, params.del);
@@ -232,6 +247,50 @@ var neo4j = {
     };
 }).call(neo4j);
 
+// traverse adapter
+(function () {
+
+    this.Traverse = function (path, node, paged, params) { // label could be: "Actor", ["Actor", "Person"], undefined; node could be 0, undefined
+
+        this.obj = params;
+        this.node = node;
+        this.paged = paged;
+        /* init */
+        if (typeof node == "number") {
+            this._path = "/node/" + node;
+        }
+        if (typeof this.node == "string" && this.node[0] == "{") // get by ref in batch {0}
+            this.path((path ? path : "") + this.node);
+
+        this.path((paged ? "/paged" : "") + "/traverse/node");
+    };
+    // extend neo4j object
+    this.Traverse.prototype = neo4j.NObj.prototype;
+    this.Traverse.prototype.adapter = function (pageSize, id) {
+        var p = this.path();
+        p += id ? "/" + id : "";
+        p += pageSize ? "?pageSize=" + pageSize : "";
+        return new neo4j.loader.Adapter(p, id ? "GET" : this.method(), id ? "{}" : this.data());
+    }
+    this.Traverse.prototype.delete = function (u) {
+        return null;
+    };
+    this.Traverse.prototype.create = function (u) {
+        return null;
+    };
+    this.Traverse.params = function (node, paged, params) {
+        if (!(typeof paged == "boolean")) {
+            params = paged;
+            paged = false;
+        }
+        return { n: node, p: params, pg: paged };
+    };
+    this.traverse = function (node, paged, params) {
+        params = neo4j.Traverse.params(node, paged, params);
+        return new neo4j.Traverse(undefined, params.n, params.pg, params.p);
+    };
+}).call(neo4j);
+
 // rel adapter
 (function () {
 
@@ -269,6 +328,10 @@ var neo4j = {
     };
     // extend neo4j object
     this.Rel.prototype = neo4j.NObj.prototype;
+    this.Rel.prototype.props = function (name, params) {
+        params = neo4j.Property.params(undefined, undefined, name, params);
+        return new neo4j.Property(this.path(), undefined, undefined, params.name, params.ps, params.del);
+    };
     this.Rel.params = function (rel, type, params) {
         if (typeof type != "string") { // 1 or 2 args are supplied
             if (typeof rel == "string" && rel[0] != "{") { // type is provided
@@ -296,6 +359,70 @@ var neo4j = {
     };
 }).call(neo4j);
 
+// label adapter
+(function () {
+
+    this.Property = function (path, id, type, name, props, del) { // label could be: "Actor", ["Actor", "Person"], undefined; node could be 0, undefined
+        this.obj = props; // str value or key value pairs or undefined
+        this.del = del;
+        this.node = id;
+        this.name = name;
+        this.type = type;
+        /* init */
+        if (typeof this.node == "number") {
+            path = "/" + this.type + "/" + this.node;
+        }
+        if (typeof this.node == "string" && this.node[0] == "{") // get by ref in batch {0}
+            this.path((path ? path : "") + this.node);
+        if (this.name) {
+            this.path("/properties");
+            this.path("/" + this.name);
+        }
+        else
+            this.path("/properties");
+    };
+    // extend neo4j object
+    this.Property.prototype = neo4j.NObj.prototype;
+    // 1, node, foo
+    // 1, node, foo, { del: true }
+    // 1, node, foo, "bar"
+    // 1, node, { del : true }
+    // 1, node, { foo: "bar" }
+    this.Property.params = function (id, type, name, params) {
+        var props = undefined, del = false;
+        if (typeof name == "object") {
+            params = name;
+            name = undefined;
+        }
+        else if (typeof params == "string") {
+            props = params;
+            params = undefined;
+        }
+        if (!params) {
+            params = {
+                del: false
+            }
+        }
+        if (params && params.del) {
+            del = true;
+        }
+
+        if (type == "rel")
+            type = "relationship";
+
+        params.id = id;
+        params.type = type;
+        params.name = name;
+        params.ps = props;
+        params.del = del;
+        return params;
+    };
+    this.props = function (id, type, name, props) {
+        params = neo4j.Label.params(id, type, name, props);
+        return new neo4j.Property(undefined, params.id, params.type, params.name, params.ps, params.del);
+    };
+}).call(neo4j);
+
 // batch adapter
 (function () {
 
@@ -308,8 +435,7 @@ var neo4j = {
     this.Batch.prototype.add = function () {
         var func = undefined;
         var args = [];
-        for (var i = 0; i < arguments.length; i++)
-        {
+        for (var i = 0; i < arguments.length; i++) {
             if (i == 0) {
                 func = neo4j[arguments[i]];
                 continue;
@@ -355,20 +481,28 @@ var neo4j = {
         this.options.host = url.parse(u).host.split(':')[0];
         this.options.port = url.parse(u).host.split(':')[1];
 
-        /*console.log('------------------------------------------');
+        console.log('------------------------------------------');
         console.log('neo4j, http://%s \n%j', this.options.host + ":" + this.options.port, { path: this.options.path, method: this.options.method, data: this.data });
-        console.log('------------------------------------------');*/
+        console.log('------------------------------------------');
 
         var a = this;
         this.__req__ = http.request(this.options, function (res) {
             res.setEncoding('utf8');
+            var resp = "";
             res.on('data', function (chunk) {
-                this._done = 1;
                 try {
-                    eval("chunk = " + chunk)
+                    resp += chunk;
                 } catch (e) { }
-                for (var i = 0; i < a.cb.length; i++) a.cb[i](chunk);
+            });
+            res.on('end', function () {
+                this._done = 1;
+                var d = undefined;
+                try {
+                    d = JSON.parse(resp);
+                } catch (e) { }
+                for (var i = 0; i < a.cb.length; i++) a.cb[i](d, res);
                 a.cb = []; a.fb = [];
+                resp = "";
             });
         });
         this.__req__.on("error", function (err) {
