@@ -130,3 +130,33 @@ neo4j.node(1).props("foo").adapter().load(gurl).done(function(ret){
  // access node property with name 'foo'
 });
 ```
+
+#### Update node property:
+```
+neo4j.node(1).props("foo", "bar").adapter().load(gurl).done(function(ret){
+ // updates node property "foo" with "bar"
+});
+```
+
+#### Set node properties, deletes all previously set properties:
+```
+neo4j.node(1).props({ foo: "bar", name: "foo-bar" }).adapter().load(gurl).done(function(ret){
+ // set node properties
+});
+```
+
+#### To access relationship properties:
+```
+var gurl = 'http://localhost:7474';
+
+neo4j.rel(1).props().adapter().load(gurl).done(function(ret){
+ // access all rel properties
+});
+```
+
+#### To access rel property with name 'foo':
+```
+neo4j.rel(1).props("foo").adapter().load(gurl).done(function(ret){
+ // access rel property with name 'foo'
+});
+```
