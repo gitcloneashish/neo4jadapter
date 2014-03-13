@@ -138,6 +138,15 @@ neo4j.node(1).props("foo", "bar").adapter().load(gurl).done(function(ret){
 });
 ```
 
+#### Delete node property:
+```
+var gurl = 'http://localhost:7474';
+
+neo4j.node(1).props("foo", {del: true}).adapter().load(gurl).done(function(ret){
+ // delete node property of type "foo"
+});
+```
+
 #### Set node properties, deletes all previously set properties:
 ```
 neo4j.node(1).props({ foo: "bar", name: "foo-bar" }).adapter().load(gurl).done(function(ret){
@@ -158,5 +167,73 @@ neo4j.rel(1).props().adapter().load(gurl).done(function(ret){
 ```
 neo4j.rel(1).props("foo").adapter().load(gurl).done(function(ret){
  // access rel property with name 'foo'
+});
+```
+
+## Labels
+
+#### To add label to node:
+```
+var gurl = 'http://localhost:7474';
+
+neo4j.node(1).label("user").adapter().load(gurl).done(function(ret){
+ // add label "user" to node
+});
+```
+
+## Traversing
+
+
+## Cypher
+
+#### To query using cypher:
+```
+var gurl = 'http://localhost:7474';
+
+neo4j.query("start n=node(1) return n.id").adapter().load(gurl).done(function(ret){
+ // return id of node 1
+});
+```
+
+#### To pass arguments to cypher:
+```
+var gurl = 'http://localhost:7474';
+
+neo4j.query("start n=node(%s) match n-[:KNOWS]->r where r.country = '%s' return r.name where n.name").adapter(1, 'USA').load(gurl).done(function(ret){
+ // return all person whome node 1 knows and stays in USA
+});
+```
+
+## Batch
+
+Batch queries are used to combine set of operation and hit once, which saves time and are faster. To create batch using adapter is simple. Create batch as:
+
+```
+var batch = neo4j.batch()
+```
+and then keeps on adding actions to batch, which will hit sequentially. For example to set two properties on a node 1:
+```
+var gurl = 'http://localhost:7474';
+
+neo4j.batch()
+.add("props", "node", 1, "foo", "bar")
+.add("props", "node", 1, "blah", "blah")
+.adapter().load(gurl).done(function(ret){
+ // set two properties on node 1
+});
+```
+
+To refer an item perviously in batch:
+```
+var gurl = 'http://localhost:7474';
+
+neo4j.batch()
+.add("node", { "name": "John" })
+.add("label", "{0}", "person") // refers, to item at 0 index in batch by {0}
+.add("node", { "name": "Marie" })
+.add("label", "{2}", "person") // refers, to item at 2 index in batch by {2}
+.add("rel", "LOVES", { "from": "{0}", "to": "{2}" })
+.adapter().load(gurl).done(function(ret){
+ // creates John-[:LOVES]->Marie
 });
 ```
