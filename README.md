@@ -18,20 +18,20 @@ Neo4j adapter is a simple javascript library which provides easy and intuitive A
 To use it on client side:
 
 - Simply include the javascript library, neo4jadapter.js, in your html page.
-```
+``` bash
 <script src="neo4jadapter.js" type="text/javascript"></script>
 ```
 
 To use it in your node project:
 - Copy the neo4j folder in node_modules folder, and include neo4j
-```
+``` bash
 var neo4j = require('neo4j').neo4j
 ```
 
 ## Nodes
 
 #### Get node with id 1:
-```
+``` bash
 var gurl = 'http://localhost:7474';
 
 neo4j.node(1).adapter().load(gurl).done(function(node){
@@ -40,7 +40,7 @@ neo4j.node(1).adapter().load(gurl).done(function(node){
 ```
 
 #### Delete node with id 1:
-```
+``` bash
 var gurl = 'http://localhost:7474';
 
 neo4j.node(1, {del: true}).adapter().load(gurl).done(function(node){
@@ -51,7 +51,7 @@ neo4j.node(1, {del: true}).adapter().load(gurl).done(function(node){
 ## Relationships
 
 #### Get all node relationships:
-```
+``` bash
 var gurl = 'http://localhost:7474';
 
 neo4j.node(1).rels().adapter().load(gurl).done(function(ret){
@@ -60,7 +60,7 @@ neo4j.node(1).rels().adapter().load(gurl).done(function(ret){
 ```
 
 #### Get node relationship with id 100:
-```
+``` bash
 var gurl = 'http://localhost:7474';
 
 neo4j.node(1).rels(100).adapter().load(gurl).done(function(ret){
@@ -69,7 +69,7 @@ neo4j.node(1).rels(100).adapter().load(gurl).done(function(ret){
 ```
 
 #### Get all node relationships of type 'KNOWS':
-```
+``` bash
 var gurl = 'http://localhost:7474';
 
 neo4j.node(1).rels("KNOWS").adapter().load(gurl).done(function(ret){
@@ -78,7 +78,7 @@ neo4j.node(1).rels("KNOWS").adapter().load(gurl).done(function(ret){
 ```
 
 #### Get all 'incoming' relationship of type 'KNOWS' to a node:
-```
+``` bash
 var gurl = 'http://localhost:7474';
 
 neo4j.node(1).rels("KNOWS", { dir: "in" }).adapter().load(gurl).done(function(ret){
@@ -87,7 +87,7 @@ neo4j.node(1).rels("KNOWS", { dir: "in" }).adapter().load(gurl).done(function(re
 ```
 
 #### Get all 'outgoing' relationship of type 'KNOWS' to a node:
-```
+``` bash
 var gurl = 'http://localhost:7474';
 
 neo4j.node(1).rels("KNOWS", { dir: "out" }).adapter().load(gurl).done(function(ret){
@@ -96,7 +96,7 @@ neo4j.node(1).rels("KNOWS", { dir: "out" }).adapter().load(gurl).done(function(r
 ```
 
 #### Delete all relationship of type 'KNOWS' to a node:
-```
+``` bash
 var gurl = 'http://localhost:7474';
 
 neo4j.node(1).rels("KNOWS", { dir: 'all', del: true }).adapter().load(gurl).done(function(ret){
@@ -105,7 +105,7 @@ neo4j.node(1).rels("KNOWS", { dir: 'all', del: true }).adapter().load(gurl).done
 ```
 
 #### Get all relationship of type 'KNOWS':
-```
+``` bash
 var gurl = 'http://localhost:7474';
 
 neo4j.rels("KNOWS", { dir: 'all' }).adapter().load(gurl).done(function(ret){
@@ -116,7 +116,7 @@ neo4j.rels("KNOWS", { dir: 'all' }).adapter().load(gurl).done(function(ret){
 ## Properties
 
 #### To access node properties:
-```
+``` bash
 var gurl = 'http://localhost:7474';
 
 neo4j.node(1).props().adapter().load(gurl).done(function(ret){
@@ -125,21 +125,21 @@ neo4j.node(1).props().adapter().load(gurl).done(function(ret){
 ```
 
 #### To access node property with name 'foo':
-```
+``` bash
 neo4j.node(1).props("foo").adapter().load(gurl).done(function(ret){
  // access node property with name 'foo'
 });
 ```
 
 #### Update node property:
-```
+``` bash
 neo4j.node(1).props("foo", "bar").adapter().load(gurl).done(function(ret){
  // updates node property "foo" with "bar"
 });
 ```
 
 #### Delete node property:
-```
+``` bash
 var gurl = 'http://localhost:7474';
 
 neo4j.node(1).props("foo", {del: true}).adapter().load(gurl).done(function(ret){
@@ -148,14 +148,14 @@ neo4j.node(1).props("foo", {del: true}).adapter().load(gurl).done(function(ret){
 ```
 
 #### Set node properties, deletes all previously set properties:
-```
+``` bash
 neo4j.node(1).props({ foo: "bar", name: "foo-bar" }).adapter().load(gurl).done(function(ret){
  // set node properties
 });
 ```
 
 #### To access relationship properties:
-```
+``` bash
 var gurl = 'http://localhost:7474';
 
 neo4j.rel(1).props().adapter().load(gurl).done(function(ret){
@@ -164,7 +164,7 @@ neo4j.rel(1).props().adapter().load(gurl).done(function(ret){
 ```
 
 #### To access rel property with name 'foo':
-```
+``` bash
 neo4j.rel(1).props("foo").adapter().load(gurl).done(function(ret){
  // access rel property with name 'foo'
 });
@@ -173,7 +173,7 @@ neo4j.rel(1).props("foo").adapter().load(gurl).done(function(ret){
 ## Labels
 
 #### To add label to node:
-```
+``` bash
 var gurl = 'http://localhost:7474';
 
 neo4j.node(1).label("user").adapter().load(gurl).done(function(ret){
@@ -187,7 +187,7 @@ neo4j.node(1).label("user").adapter().load(gurl).done(function(ret){
 ## Cypher
 
 #### To query using cypher:
-```
+``` bash
 var gurl = 'http://localhost:7474';
 
 neo4j.query("start n=node(1) return n.id").adapter().load(gurl).done(function(ret){
@@ -196,7 +196,7 @@ neo4j.query("start n=node(1) return n.id").adapter().load(gurl).done(function(re
 ```
 
 #### To pass arguments to cypher:
-```
+``` bash
 var gurl = 'http://localhost:7474';
 
 neo4j.query("start n=node(%s) match n-[:KNOWS]->r where r.country = '%s' return r.name where n.name").adapter(1, 'USA').load(gurl).done(function(ret){
@@ -208,11 +208,11 @@ neo4j.query("start n=node(%s) match n-[:KNOWS]->r where r.country = '%s' return 
 
 Batch queries are used to combine set of operation and hit once, which saves time and are faster. To create batch using adapter is simple. Create batch as:
 
-```
+``` bash
 var batch = neo4j.batch()
 ```
 and then keeps on adding actions to batch, which will hit sequentially. For example to set two properties on a node 1:
-```
+``` bash
 var gurl = 'http://localhost:7474';
 
 neo4j.batch()
@@ -224,7 +224,7 @@ neo4j.batch()
 ```
 
 To refer an item perviously in batch:
-```
+``` bash
 var gurl = 'http://localhost:7474';
 
 neo4j.batch()
